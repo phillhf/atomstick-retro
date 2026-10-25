@@ -1,0 +1,2 @@
+# Eingesteckte USB-Datenträger mit einem Ordner "roms" automatisch importieren
+ACTION=="add", SUBSYSTEM=="block", ENV{ID_BUS}=="usb", ENV{ID_FS_USAGE}=="filesystem", TAG+="systemd", ENV{SYSTEMD_WANTS}+="retro-usb-import@%k.service"

@@ -1,0 +1,45 @@
+#!/bin/bash
+# Startet RetroArch als Benutzer retro auf tty1 (aufgerufen von retroarch.service).
+
+# Tonausgabe: HDMI-Ausgang mit angeschlossenem Fernseher bevorzugen
+detect_audio() {
+    local dev="" line card pcm eld first=""
+    if [ -s /run/retro-tv/audio-device ]; then
+        dev=$(cat /run/retro-tv/audio-device)
+    else
+        for _ in $(seq 1 10); do
+            grep -qi playback /proc/asound/pcm 2>/dev/null && break
+            sleep 1
+        done
+        while read -r line; do
+            card=$((10#${line:0:2}))
+            pcm=$((10#${line:3:2}))
+            [ -z "$first" ] && first="hw:$card,$pcm"
+            eld=$(amixer -c "$card" cget iface=PCM,name=ELD,device="$pcm" 2>/dev/null | grep -o 'values=[0-9]*' | head -n1)
+            if [ -n "$eld" ] && [ "$eld" != "values=0" ]; then
+                dev="hw:$card,$pcm"
+                break
+            fi
+        done < <(grep -iE 'hdmi|lpe' /proc/asound/pcm 2>/dev/null | grep -i playback)
+        dev=${dev:-$first}
+    fi
+
+    if [ -z "$dev" ]; then
+        rm -f ~/.asoundrc
+        return
+    fi
+    card=${dev#hw:}
+    card=${card%%,*}
+    printf 'pcm.!default {\n    type plug\n    slave.pcm "%s"\n}\nctl.!default {\n    type hw\n    card %s\n}\n' \
+        "$dev" "$card" > ~/.asoundrc
+    echo "Tonausgabe: $dev"
+}
+
+detect_audio
+/usr/local/bin/retro-playlists || true
+
+args=()
+[ -f /run/retro-tv/retroarch-override.cfg ] && args+=(--appendconfig /run/retro-tv/retroarch-override.cfg)
+[ -e /etc/retro-tv/ci-test ] && args+=(--verbose)
+
+exec retroarch "${args[@]}"

@@ -1,0 +1,12 @@
+#!/bin/bash
+# Beobachtet ~/roms und aktualisiert die Spielelisten, sobald Dateien dazukommen oder verschwinden.
+ROMS=/home/retro/roms
+mkdir -p "$ROMS"
+
+inotifywait -q -m -r -e close_write -e moved_to -e moved_from -e delete -e create \
+    --exclude '/\.import-' --format '%w%f' "$ROMS" |
+while read -r _; do
+    # Warten, bis 3 Sekunden lang nichts mehr passiert (Kopiervorgänge bündeln)
+    while read -r -t 3 _; do :; done
+    /usr/local/bin/retro-playlists --restart-if-needed
+done

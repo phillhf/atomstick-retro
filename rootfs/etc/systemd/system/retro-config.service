@@ -1,0 +1,12 @@
+[Unit]
+Description=TV Retro Gaming: Einstellungen aus retro-config.txt anwenden
+After=local-fs.target
+Before=NetworkManager.service smbd.service nmbd.service avahi-daemon.service wsdd2.service bluetooth.service ssh.service retroarch.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/retro-config
+
+[Install]
+WantedBy=multi-user.target

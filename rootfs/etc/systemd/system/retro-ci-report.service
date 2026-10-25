@@ -1,0 +1,11 @@
+[Unit]
+Description=TV Retro Gaming: Testbericht für den automatischen QEMU-Test
+After=retroarch.service retro-firstboot.service
+ConditionPathExists=/etc/retro-tv/ci-test
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/retro-ci-report
+
+[Install]
+WantedBy=multi-user.target

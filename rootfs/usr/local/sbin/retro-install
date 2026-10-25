@@ -1,0 +1,84 @@
+#!/bin/bash
+# Installiert das laufende System vom USB-Stick auf den internen Speicher (eMMC).
+# Wird über den GRUB-Eintrag "Auf internen Speicher installieren" gestartet (retro.install).
+set -uo pipefail
+export TERM=linux
+TITLE="TV Retro Gaming - Installation"
+T=/mnt/target
+
+msg()    { whiptail --title "$TITLE" --msgbox "$1" 14 72; }
+fail()   { msg "Fehler: $1\n\nDas Gerät wird neu gestartet."; reboot; exit 1; }
+partdev() { case $1 in *[0-9]) echo "${1}p$2" ;; *) echo "$1$2" ;; esac; }
+
+src_disk=/dev/$(lsblk -dno PKNAME "$(findmnt -no SOURCE /)")
+
+# Ziel-Kandidaten: ganze Datenträger außer dem Startmedium und den eMMC-Bootbereichen
+items=()
+default=""
+while read -r name size model; do
+    [ "$name" = "$src_disk" ] && continue
+    [[ $name =~ (boot[0-9]|rpmb)$ ]] && continue
+    items+=("$name" "$size ${model:-}")
+    [[ $name == /dev/mmcblk* ]] && [ -z "$default" ] && default=$name
+done < <(lsblk -dpno NAME,SIZE,MODEL,TYPE | awk '$NF=="disk" {NF--; print}')
+
+[ ${#items[@]} -gt 0 ] || fail "Kein interner Speicher gefunden."
+default=${default:-${items[0]}}
+
+target=$(whiptail --title "$TITLE" --default-item "$default" --menu \
+    "Wohin soll TV Retro Gaming installiert werden?\n(Interner Speicher heißt meist /dev/mmcblk...)" \
+    16 72 6 "${items[@]}" 3>&1 1>&2 2>&3) || { msg "Abgebrochen. Das Gerät startet neu."; reboot; exit 0; }
+
+whiptail --title "$TITLE" --defaultno --yesno \
+    "ACHTUNG: Alle Daten auf $target werden gelöscht!\n\nSpiele und Einstellungen von diesem USB-Stick werden mitkopiert.\n\nJetzt installieren?" \
+    14 72 || { msg "Abgebrochen. Das Gerät startet neu."; reboot; exit 0; }
+
+trap 'fail "Die Installation ist fehlgeschlagen (Zeile $LINENO)."' ERR
+set -e
+clear
+echo "==> Partitioniere $target"
+umount -R "$T" 2>/dev/null || true
+wipefs -a "$target" >/dev/null
+sfdisk -q "$target" <<EOF
+label: gpt
+size=256MiB, type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B, name="EFI"
+size=512MiB, type=EBD0A0A2-B9E5-4433-87C0-68B6B72699C7, name="RETRO"
+type=4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709, name="RETRO_ROOT"
+EOF
+udevadm settle
+p1=$(partdev "$target" 1); p2=$(partdev "$target" 2); p3=$(partdev "$target" 3)
+
+echo "==> Formatiere"
+mkfs.vfat -F 32 -n RETRO_EFI "$p1" >/dev/null
+mkfs.vfat -F 32 -n RETRO "$p2" >/dev/null
+mkfs.ext4 -q -F -L RETRO_ROOT "$p3"
+
+echo "==> Kopiere System (dauert einige Minuten)"
+mkdir -p "$T"
+mount "$p3" "$T"
+rsync -aHAXx --info=progress2 --exclude=/etc/retro-tv/ci-test --exclude=/var/lib/retro-tv/firstboot-done / "$T/"
+mkdir -p "$T/boot/efi" "$T/boot/retro"
+mount "$p1" "$T/boot/efi"
+mount "$p2" "$T/boot/retro"
+rsync -rt /boot/retro/ "$T/boot/retro/"
+
+echo "==> Richte Bootloader ein"
+root_uuid=$(blkid -s UUID -o value "$p3")
+cat > "$T/etc/fstab" <<EOF
+UUID=$root_uuid  /           ext4  defaults,noatime,commit=60                    0 1
+UUID=$(blkid -s UUID -o value "$p1")  /boot/efi   vfat  umask=0077,nofail                             0 2
+UUID=$(blkid -s UUID -o value "$p2")  /boot/retro vfat  uid=1000,gid=1000,umask=0022,flush,nofail     0 2
+EOF
+/usr/local/sbin/retro-mkgrub "$T" "$root_uuid" installed
+
+if [ -d /sys/firmware/efi ]; then
+    loader='\EFI\BOOT\BOOTX64.EFI'
+    [ "$(cat /sys/firmware/efi/fw_platform_size 2>/dev/null)" = 32 ] && loader='\EFI\BOOT\BOOTIA32.EFI'
+    efibootmgr -q -c -d "$target" -p 1 -L "TV Retro Gaming" -l "$loader" 2>/dev/null || true
+fi
+
+sync
+umount -R "$T"
+trap - ERR
+msg "Installation abgeschlossen!\n\nBitte jetzt den USB-Stick abziehen und dann Enter drücken.\nDas Gerät startet neu."
+reboot

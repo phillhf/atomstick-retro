@@ -1,0 +1,27 @@
+#!/bin/bash
+# Importiert ROMs von einem eingesteckten USB-Datenträger (gestartet über udev).
+# Aufruf: retro-usb-import /dev/sdX1
+set -u
+
+dev=$1
+name=$(basename "$dev")
+
+# Nie vom Startmedium importieren (beim Betrieb vom USB-Stick)
+root_disk=$(lsblk -dno PKNAME "$(findmnt -no SOURCE /)")
+dev_disk=$(lsblk -dno PKNAME "$dev")
+[ "${dev_disk:-$name}" = "$root_disk" ] && exit 0
+findmnt -rno TARGET -S "$dev" >/dev/null && exit 0
+
+mnt=/run/retro-tv/usb-$name
+mkdir -p "$mnt"
+opts=ro,nosuid,nodev,noexec
+if ! mount -o "$opts" "$dev" "$mnt" 2>/dev/null && ! mount -t ntfs3 -o "$opts" "$dev" "$mnt" 2>/dev/null; then
+    echo "$dev konnte nicht eingehängt werden"
+    rmdir "$mnt"
+    exit 0
+fi
+
+/usr/local/bin/retro-import "$mnt"
+
+umount "$mnt"
+rmdir "$mnt"

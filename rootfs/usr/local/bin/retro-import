@@ -1,0 +1,106 @@
+#!/usr/bin/python3
+"""Übernimmt ROMs und BIOS-Dateien von einem eingehängten Datenträger.
+
+Aufruf: retro-import <verzeichnis>
+Gesucht wird <verzeichnis>/roms (Groß-/Kleinschreibung egal) mit Unterordnern je System,
+z. B. roms/snes oder roms/Mega Drive. Dateien direkt in roms/ werden anhand der Endung
+einsortiert. Vorhandene Dateien gleicher Größe werden übersprungen, gelöscht wird nichts.
+"""
+import os
+import shutil
+import sys
+
+sys.path.insert(0, "/usr/local/lib/retro-tv")
+import systems  # noqa: E402
+
+IS_ROOT = os.geteuid() == 0
+stats = {"kopiert": 0, "vorhanden": 0, "fehler": 0, "unbekannt": 0}
+
+
+def find_dir(base, name):
+    try:
+        for e in os.scandir(base):
+            if e.is_dir() and e.name.lower() == name:
+                return e.path
+    except OSError:
+        pass
+    return None
+
+
+def ensure_dir(path):
+    missing = []
+    while not os.path.isdir(path):
+        missing.append(path)
+        path = os.path.dirname(path)
+    for d in reversed(missing):
+        os.mkdir(d)
+        if IS_ROOT:
+            os.chown(d, systems.UID, systems.GID)
+
+
+def copy_file(src, dst_dir):
+    dst = os.path.join(dst_dir, os.path.basename(src))
+    try:
+        if os.path.exists(dst) and os.path.getsize(dst) == os.path.getsize(src):
+            stats["vorhanden"] += 1
+            return
+        ensure_dir(dst_dir)
+        tmp = os.path.join(dst_dir, ".import-" + os.path.basename(src))
+        shutil.copyfile(src, tmp)
+        if IS_ROOT:
+            os.chown(tmp, systems.UID, systems.GID)
+        os.replace(tmp, dst)
+        stats["kopiert"] += 1
+    except OSError as e:
+        print(f"Fehler bei {src}: {e}", file=sys.stderr)
+        stats["fehler"] += 1
+
+
+def import_system_dir(path, system):
+    target = os.path.join(systems.ROM_DIR, system.folder)
+    for dirpath, dirnames, files in os.walk(path):
+        dirnames[:] = [d for d in dirnames if not d.startswith(".")]
+        rel = os.path.relpath(dirpath, path)
+        for f in files:
+            if f.startswith(".") or not systems.accepts(system, f):
+                continue
+            copy_file(os.path.join(dirpath, f), os.path.normpath(os.path.join(target, rel)))
+
+
+def main():
+    if len(sys.argv) != 2:
+        sys.exit(__doc__)
+    source = sys.argv[1]
+
+    roms = find_dir(source, "roms")
+    if roms:
+        for entry in sorted(os.scandir(roms), key=lambda e: e.name):
+            if entry.name.startswith("."):
+                continue
+            if entry.is_dir():
+                system = systems.by_folder_name(entry.name)
+                if system:
+                    import_system_dir(entry.path, system)
+                else:
+                    print(f"Unbekannter Ordner übersprungen: {entry.name}")
+                    stats["unbekannt"] += 1
+            elif entry.is_file():
+                system = systems.guess_system(entry.path)
+                if system:
+                    copy_file(entry.path, os.path.join(systems.ROM_DIR, system.folder))
+                elif systems.ext_of(entry.name) not in ("txt", "md", "ini"):
+                    print(f"System nicht erkannt, bitte in einen Unterordner legen: {entry.name}")
+                    stats["unbekannt"] += 1
+
+    bios = find_dir(source, "bios")
+    if bios:
+        for entry in os.scandir(bios):
+            if entry.is_file() and not entry.name.startswith("."):
+                copy_file(entry.path, systems.BIOS_DIR)
+
+    print("Import aus {}: {kopiert} kopiert, {vorhanden} schon vorhanden, {fehler} Fehler, "
+          "{unbekannt} übersprungen".format(source, **stats))
+
+
+if __name__ == "__main__":
+    main()

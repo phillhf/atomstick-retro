@@ -1,0 +1,119 @@
+#!/bin/bash
+# Wendet /boot/retro/retro-config.txt an (WLAN, Name, Passwort, Auflösung, Bluetooth, SSH).
+# Die Datei liegt auf der FAT32-Partition "RETRO" und ist unter Windows bearbeitbar.
+set -u
+
+CFG=/boot/retro/retro-config.txt
+DEFAULT_CFG=/usr/local/share/retro-tv/retro-config.txt
+STATE=/var/lib/retro-tv
+RUN=/run/retro-tv
+mkdir -p "$STATE" "$RUN"
+
+if [ -d /boot/retro ] && mountpoint -q /boot/retro && [ ! -f "$CFG" ]; then
+    sed 's/\r$//; s/$/\r/' "$DEFAULT_CFG" > "$CFG"
+fi
+
+declare -A C=(
+    [WIFI_SSID]="" [WIFI_PASSWORD]="" [WIFI_COUNTRY]="DE"
+    [HOSTNAME]="retro-tv" [SHARE_PASSWORD]="retro"
+    [RESOLUTION]="1080p" [AUDIO_DEVICE]="auto"
+    [BLUETOOTH_AUTOPAIR]="ja" [SSH]="nein"
+)
+
+if [ -f "$CFG" ]; then
+    while IFS= read -r line || [ -n "$line" ]; do
+        line=${line%$'\r'}
+        line=${line#$'\xef\xbb\xbf'}
+        [[ $line =~ ^[[:space:]]*# ]] && continue
+        [[ $line =~ ^[[:space:]]*([A-Za-z_]+)[[:space:]]*=(.*)$ ]] || continue
+        key=${BASH_REMATCH[1]^^}
+        val=${BASH_REMATCH[2]}
+        val=${val#"${val%%[![:space:]]*}"}
+        val=${val%"${val##*[![:space:]]}"}
+        if [[ $val =~ ^\"(.*)\"$ ]]; then val=${BASH_REMATCH[1]}; fi
+        C[$key]=$val
+    done < "$CFG"
+fi
+
+is_yes() { [[ ${1,,} =~ ^(ja|j|yes|y|true|1|an|on)$ ]]; }
+
+write_if_changed() {  # <datei> <modus>, Inhalt von stdin
+    local tmp
+    tmp=$(mktemp)
+    cat > "$tmp"
+    if [ -f "$1" ] && cmp -s "$tmp" "$1"; then
+        rm -f "$tmp"
+        return 1
+    fi
+    install -m "$2" "$tmp" "$1"
+    rm -f "$tmp"
+}
+
+# --- Gerätename
+host=${C[HOSTNAME],,}
+[[ $host =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$ ]] || host=retro-tv
+if [ "$(cat /etc/hostname 2>/dev/null)" != "$host" ]; then
+    echo "$host" > /etc/hostname
+    sed -i "s/^127\.0\.1\.1.*/127.0.1.1\t$host/" /etc/hosts
+fi
+hostname "$host"
+
+# --- WLAN
+country=${C[WIFI_COUNTRY]^^}
+[[ $country =~ ^[A-Z]{2}$ ]] || country=DE
+echo "options cfg80211 ieee80211_regdom=$country" | write_if_changed /etc/modprobe.d/retro-regdom.conf 644 || true
+iw reg set "$country" 2>/dev/null || true
+
+NM_FILE=/etc/NetworkManager/system-connections/retro-wifi.nmconnection
+if [ -n "${C[WIFI_SSID]}" ]; then
+    [ -s "$STATE/wifi-uuid" ] || cat /proc/sys/kernel/random/uuid > "$STATE/wifi-uuid"
+    esc() { printf '%s' "${1//\\/\\\\}"; }
+    {
+        printf '[connection]\nid=retro-wifi\nuuid=%s\ntype=wifi\nautoconnect=true\n\n' "$(cat "$STATE/wifi-uuid")"
+        printf '[wifi]\nmode=infrastructure\nssid=%s\n\n' "$(esc "${C[WIFI_SSID]}")"
+        if [ -n "${C[WIFI_PASSWORD]}" ]; then
+            printf '[wifi-security]\nkey-mgmt=wpa-psk\npsk=%s\n\n' "$(esc "${C[WIFI_PASSWORD]}")"
+        fi
+        printf '[ipv4]\nmethod=auto\n\n[ipv6]\nmethod=auto\naddr-gen-mode=stable-privacy\n'
+    } | write_if_changed "$NM_FILE" 600 && echo "WLAN-Einstellungen aktualisiert: ${C[WIFI_SSID]}"
+else
+    rm -f "$NM_FILE"
+fi
+
+# --- Passwort für Netzwerkfreigabe und SSH
+pw=${C[SHARE_PASSWORD]:-retro}
+pw_hash=$(printf '%s' "$pw" | sha256sum | cut -d' ' -f1)
+if [ "$(cat "$STATE/share-password.sha256" 2>/dev/null)" != "$pw_hash" ]; then
+    printf '%s\n%s\n' "$pw" "$pw" | smbpasswd -s -a retro >/dev/null
+    printf 'retro:%s\n' "$pw" | chpasswd
+    echo "$pw_hash" > "$STATE/share-password.sha256"
+    echo "Passwort geändert"
+fi
+
+# --- RetroArch: Auflösung und Tonausgabe
+case ${C[RESOLUTION],,} in
+    720p)        w=1280; h=720 ;;
+    auto|nativ)  w=0;    h=0 ;;
+    *)           w=1920; h=1080 ;;
+esac
+printf 'video_fullscreen_x = "%s"\nvideo_fullscreen_y = "%s"\n' "$w" "$h" > "$RUN/retroarch-override.cfg"
+
+if [[ ${C[AUDIO_DEVICE]} =~ ^hw:[0-9]+,[0-9]+$ ]]; then
+    echo "${C[AUDIO_DEVICE]}" > "$RUN/audio-device"
+else
+    rm -f "$RUN/audio-device"
+fi
+
+# --- Bluetooth
+if is_yes "${C[BLUETOOTH_AUTOPAIR]}"; then touch "$RUN/bt-autopair"; else rm -f "$RUN/bt-autopair"; fi
+
+# --- SSH
+if is_yes "${C[SSH]}"; then
+    [ -e /etc/ssh/ssh_host_ed25519_key ] || ssh-keygen -A
+    systemctl enable ssh.service 2>/dev/null
+    systemctl start --no-block ssh.service
+else
+    systemctl disable ssh.service 2>/dev/null
+    systemctl stop --no-block ssh.service 2>/dev/null
+fi
+exit 0

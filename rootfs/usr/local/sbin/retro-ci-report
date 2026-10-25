@@ -1,0 +1,32 @@
+#!/bin/bash
+# Schreibt einen Testbericht auf die serielle Schnittstelle. Nur aktiv im automatischen
+# QEMU-Test (Datei /etc/retro-tv/ci-test), auf dem echten Gerät passiert nichts.
+[ -e /etc/retro-tv/ci-test ] || exit 0
+sleep 45
+
+{
+    echo "=== RETROTV-CI-REPORT ==="
+    echo "firmware=$(cat /sys/firmware/efi/fw_platform_size 2>/dev/null || echo bios)"
+    echo "kernel=$(uname -r)"
+    echo "version=$(cat /etc/retro-tv/version)"
+    echo "system=$(systemctl is-system-running)"
+    for u in retroarch retro-config retro-firstboot retro-boot-import retro-roms-watch NetworkManager smbd nmbd avahi-daemon wsdd2 bluetooth; do
+        echo "$u=$(systemctl is-active "$u")"
+    done
+    echo "--- fehlgeschlagene Dienste"
+    systemctl --failed --no-legend --plain
+    echo "--- Datenträger"
+    lsblk -o NAME,SIZE,FSTYPE,LABEL,MOUNTPOINTS
+    df -h / /boot/efi /boot/retro
+    echo "--- ROMs"
+    find /home/retro/roms -type f
+    echo "--- Playlists"
+    ls -la /home/retro/.config/retroarch/playlists
+    echo "--- asoundrc"
+    cat /home/retro/.asoundrc 2>/dev/null
+    echo "--- Journal retroarch"
+    journalctl -b -u retroarch --no-pager | tail -n 80
+    echo "--- Journal Fehler"
+    journalctl -b -p err --no-pager | tail -n 60
+    echo "RETROTV-CI-DONE"
+} > /dev/ttyS0 2>&1

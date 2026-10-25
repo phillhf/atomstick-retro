@@ -1,0 +1,122 @@
+#!/usr/bin/python3
+"""Erzeugt die RetroArch-Spielelisten aus den Ordnern unter ~/roms.
+
+--restart-if-needed: Startet RetroArch neu, wenn ein System neu dazukam oder wegfiel
+(das Menü liest die Liste der Systeme nur beim Start) und gerade kein Spiel läuft.
+"""
+import json
+import os
+import subprocess
+import sys
+
+sys.path.insert(0, "/usr/local/lib/retro-tv")
+import systems  # noqa: E402
+
+IS_ROOT = os.geteuid() == 0
+
+
+def chown(path):
+    if IS_ROOT:
+        os.chown(path, systems.UID, systems.GID)
+
+
+def scan(system):
+    base = os.path.join(systems.ROM_DIR, system.folder)
+    roms = []
+    for dirpath, dirnames, files in os.walk(base):
+        dirnames[:] = [d for d in dirnames if not d.startswith(".")]
+        for f in files:
+            if not f.startswith(".") and systems.accepts(system, f):
+                roms.append(os.path.join(dirpath, f))
+    roms.sort(key=lambda p: os.path.basename(p).casefold())
+    return roms
+
+
+def playlist(system, roms, core):
+    return {
+        "version": "1.5",
+        "default_core_path": core,
+        "default_core_name": system.core_name,
+        "label_display_mode": 0,
+        "right_thumbnail_mode": 0,
+        "left_thumbnail_mode": 0,
+        "sort_mode": 0,
+        "items": [
+            {
+                "path": p,
+                "label": os.path.splitext(os.path.basename(p))[0],
+                "core_path": core,
+                "core_name": system.core_name,
+                "crc32": "DETECT",
+                "db_name": system.playlist + ".lpl",
+            }
+            for p in roms
+        ],
+    }
+
+
+def core_loaded():
+    pids = subprocess.run(["pgrep", "-x", "retroarch"], capture_output=True, text=True).stdout.split()
+    for pid in pids:
+        try:
+            with open(f"/proc/{pid}/maps") as f:
+                if "_libretro.so" in f.read():
+                    return True
+        except OSError:
+            pass
+    return False
+
+
+def restart_retroarch():
+    if subprocess.run(["systemctl", "is-active", "--quiet", "retroarch.service"]).returncode != 0:
+        return
+    if core_loaded():
+        print("Spiel läuft, RetroArch wird nicht neu gestartet")
+        return
+    flag = "/run/retro-tv/no-poweroff"
+    open(flag, "w").close()
+    try:
+        subprocess.run(["systemctl", "restart", "retroarch.service"])
+    finally:
+        os.remove(flag)
+
+
+def main():
+    os.makedirs(systems.PLAYLIST_DIR, exist_ok=True)
+    chown(systems.PLAYLIST_DIR)
+    systems_changed = False
+
+    for system in systems.SYSTEMS:
+        path = os.path.join(systems.PLAYLIST_DIR, system.playlist + ".lpl")
+        roms = scan(system)
+        core = systems.core_path(system)
+        if roms and not core:
+            print(f"Emulator fehlt für {system.folder}: {system.core}", file=sys.stderr)
+        if not roms or not core:
+            if os.path.exists(path):
+                os.remove(path)
+                systems_changed = True
+            continue
+
+        data = json.dumps(playlist(system, roms, core), indent=2, ensure_ascii=False) + "\n"
+        old = None
+        if os.path.exists(path):
+            with open(path, encoding="utf-8", errors="replace") as f:
+                old = f.read()
+        if old == data:
+            continue
+        if old is None:
+            systems_changed = True
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(data)
+        chown(tmp)
+        os.replace(tmp, path)
+        print(f"{system.folder}: {len(roms)} Spiele")
+
+    if systems_changed and "--restart-if-needed" in sys.argv and IS_ROOT:
+        restart_retroarch()
+
+
+if __name__ == "__main__":
+    main()

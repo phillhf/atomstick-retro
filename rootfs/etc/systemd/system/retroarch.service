@@ -1,0 +1,29 @@
+[Unit]
+Description=RetroArch (Spieleoberfläche)
+After=systemd-user-sessions.service retro-config.service retro-boot-import.service sound.target
+Wants=retro-config.service
+ConditionKernelCommandLine=!retro.install
+ConditionKernelCommandLine=!retro.nogui
+
+[Service]
+User=retro
+Group=retro
+PAMName=login
+WorkingDirectory=/home/retro
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+StandardInput=tty
+StandardOutput=journal
+StandardError=journal
+UtmpIdentifier=tty1
+UtmpMode=user
+ExecStart=/usr/local/bin/retro-launch
+# "RetroArch beenden" im Menü schaltet das Gerät aus
+ExecStopPost=+/usr/local/sbin/retro-after-exit
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

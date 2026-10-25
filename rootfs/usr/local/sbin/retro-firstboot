@@ -1,0 +1,17 @@
+#!/bin/bash
+# Ersteinrichtung: Root-Partition auf den ganzen Datenträger vergrößern, SSH-Schlüssel erzeugen.
+set -u
+
+src=$(findmnt -no SOURCE /)
+disk=/dev/$(lsblk -dno PKNAME "$src")
+part=$(cat "/sys/class/block/$(basename "$src")/partition")
+
+# Sicherungs-GPT ans Ende des (größeren) Datenträgers verschieben, dann vergrößern
+sgdisk -e "$disk" >/dev/null 2>&1 || true
+partx -u "$disk" 2>/dev/null || true
+growpart "$disk" "$part" && resize2fs "$src"
+
+ssh-keygen -A
+
+mkdir -p /var/lib/retro-tv
+touch /var/lib/retro-tv/firstboot-done

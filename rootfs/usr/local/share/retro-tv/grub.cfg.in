@@ -1,0 +1,22 @@
+# TV Retro Gaming – wird von retro-mkgrub erzeugt, Änderungen gehen verloren.
+set default=0
+#LIVE set timeout=5
+#LIVE set timeout_style=menu
+#INSTALLED set timeout=1
+#INSTALLED set timeout_style=hidden
+set menu_color_normal=light-gray/black
+set menu_color_highlight=black/light-gray
+terminal_output console
+
+menuentry "TV Retro Gaming" {
+    linux /vmlinuz root=UUID=@ROOT_UUID@ ro quiet loglevel=3 vt.global_cursor_default=0 consoleblank=0 intel_idle.max_cstate=1
+    initrd /initrd.img
+}
+#LIVE menuentry "Auf internen Speicher installieren (Tastatur noetig)" {
+#LIVE     linux /vmlinuz root=UUID=@ROOT_UUID@ ro quiet loglevel=3 consoleblank=0 intel_idle.max_cstate=1 retro.install
+#LIVE     initrd /initrd.img
+#LIVE }
+menuentry "Fehlersuche (Textkonsole, Login: retro)" {
+    linux /vmlinuz root=UUID=@ROOT_UUID@ ro consoleblank=0 intel_idle.max_cstate=1 retro.nogui
+    initrd /initrd.img
+}

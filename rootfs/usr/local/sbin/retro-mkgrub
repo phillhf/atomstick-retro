@@ -1,0 +1,36 @@
+#!/bin/bash
+# Erzeugt GRUB-Konfiguration und UEFI-Bootdateien für 64- und 32-Bit-Firmware.
+# Aufruf: retro-mkgrub <root-verzeichnis> <root-uuid> <live|installed>
+# Die EFI-Dateien landen in <root>/boot/efi/EFI/BOOT (Fallback-Pfad, braucht keinen NVRAM-Eintrag).
+set -euo pipefail
+
+ROOT=${1:?root-verzeichnis}
+UUID=${2:?root-uuid}
+MODE=${3:?live|installed}
+TEMPLATE=/usr/local/share/retro-tv/grub.cfg.in
+
+case "$MODE" in
+    live)      keep='#LIVE '; drop='#INSTALLED ' ;;
+    installed) keep='#INSTALLED '; drop='#LIVE ' ;;
+    *) echo "Unbekannter Modus: $MODE" >&2; exit 1 ;;
+esac
+
+mkdir -p "$ROOT/boot/grub" "$ROOT/boot/efi/EFI/BOOT"
+sed -e "s/@ROOT_UUID@/$UUID/g" -e "/^$drop/d" -e "s/^$keep//" "$TEMPLATE" > "$ROOT/boot/grub/grub.cfg"
+
+embed=$(mktemp)
+trap 'rm -f "$embed"' EXIT
+cat > "$embed" <<EOF
+search --no-floppy --fs-uuid --set=root $UUID
+set prefix=(\$root)/boot/grub
+configfile (\$root)/boot/grub/grub.cfg
+EOF
+
+for target in x86_64-efi:BOOTX64.EFI i386-efi:BOOTIA32.EFI; do
+    grub-mkstandalone \
+        --format="${target%%:*}" \
+        --output="$ROOT/boot/efi/EFI/BOOT/${target##*:}" \
+        --modules="part_gpt part_msdos fat ext2 search search_fs_uuid normal configfile linux" \
+        --locales="" --themes="" --fonts="" \
+        "boot/grub/grub.cfg=$embed"
+done

@@ -1,0 +1,36 @@
+# ==============================================================
+#  TV Retro Gaming - Einstellungen
+# ==============================================================
+#  Diese Datei kannst du unter Windows mit dem Editor bearbeiten.
+#  Änderungen gelten ab dem nächsten Start des Geräts.
+#  Zeilen mit # am Anfang sind Kommentare.
+# ==============================================================
+
+# --- WLAN ------------------------------------------------------
+# Name und Passwort deines WLANs. Leer lassen = kein WLAN.
+WIFI_SSID=
+WIFI_PASSWORD=
+# Land für die WLAN-Funkregeln (DE, AT, CH ...)
+WIFI_COUNTRY=DE
+
+# --- Netzwerk --------------------------------------------------
+# Gerätename im Netzwerk. Im Windows-Explorer erreichbar unter \\retro-tv
+HOSTNAME=retro-tv
+# Passwort für die Netzwerkfreigabe (Benutzername: retro)
+SHARE_PASSWORD=retro
+
+# --- Bild und Ton ----------------------------------------------
+# Bildschirmauflösung: 1080p (empfohlen), 720p oder auto
+# Bei 4K-Fernsehern 1080p lassen, sonst wird es auf dem Stick ruckelig.
+RESOLUTION=1080p
+# Tonausgabe: auto (HDMI wird automatisch gesucht) oder z. B. hw:0,3
+AUDIO_DEVICE=auto
+
+# --- Controller ------------------------------------------------
+# Bluetooth-Controller in den ersten 2 Minuten nach dem Start automatisch
+# koppeln, wenn sie im Kopplungsmodus sind (ja/nein)
+BLUETOOTH_AUTOPAIR=ja
+
+# --- Wartung ---------------------------------------------------
+# SSH-Zugang (Benutzer retro, Passwort wie SHARE_PASSWORD) (ja/nein)
+SSH=nein

@@ -1,0 +1,17 @@
+[Unit]
+Description=TV Retro Gaming: Installation auf den internen Speicher
+After=local-fs.target systemd-user-sessions.service retro-config.service
+ConditionKernelCommandLine=retro.install
+
+[Service]
+Type=idle
+ExecStart=/usr/local/sbin/retro-install
+StandardInput=tty
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+
+[Install]
+WantedBy=multi-user.target

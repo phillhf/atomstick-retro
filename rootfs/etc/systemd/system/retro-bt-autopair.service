@@ -1,0 +1,11 @@
+[Unit]
+Description=TV Retro Gaming: Bluetooth-Controller automatisch koppeln
+After=bluetooth.service retro-config.service
+Wants=bluetooth.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/retro-bt-autopair
+
+[Install]
+WantedBy=multi-user.target

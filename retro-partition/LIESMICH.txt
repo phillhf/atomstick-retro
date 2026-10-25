@@ -1,0 +1,35 @@
+TV RETRO GAMING
+===============
+
+Dieses Laufwerk ("RETRO") gehört zu deinem TV-Retro-Gaming-Stick.
+
+1. EINSTELLUNGEN
+   Öffne retro-config.txt mit dem Editor und trage dein WLAN ein.
+
+2. SPIELE (ROMs)
+   Lege deine Spiele in den passenden Ordner unter "roms":
+
+     roms\nes            Nintendo NES / Famicom   (.nes)
+     roms\snes           Super Nintendo           (.sfc .smc)
+     roms\gb             Game Boy                 (.gb)
+     roms\gbc            Game Boy Color           (.gbc)
+     roms\megadrive      Sega Mega Drive          (.md .gen .bin)
+     roms\mastersystem   Sega Master System       (.sms)
+     roms\gamegear       Sega Game Gear           (.gg)
+
+   ZIP-Dateien gehen auch. Beim Start werden die Spiele übernommen.
+
+3. SPÄTER WEITERE SPIELE HINZUFÜGEN
+   - Über das Netzwerk: im Windows-Explorer \\retro-tv eingeben
+     (Benutzer: retro, Passwort: retro bzw. SHARE_PASSWORD), Ordner "roms".
+   - Per USB-Stick: Ordner "roms" mit den gleichen Unterordnern anlegen,
+     Stick einstecken, kurz warten, fertig.
+
+4. BEDIENUNG
+   - Start + Select im Spiel: Menü (Speichern, Laden, Spiel beenden)
+   - "RetroArch beenden" im Hauptmenü: Gerät ausschalten
+
+Bitte nur Sicherungskopien von Spielen verwenden, die du selbst besitzt.
+
+Hinweis: Windows zeigt eventuell weitere Partitionen dieses Sticks nicht an
+oder bietet an, sie zu formatieren. Das bitte immer ABBRECHEN.

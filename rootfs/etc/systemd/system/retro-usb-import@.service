@@ -1,0 +1,8 @@
+[Unit]
+Description=TV Retro Gaming: ROM-Import von USB-Datenträger %I
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/retro-usb-import /dev/%I
+TimeoutStartSec=30min

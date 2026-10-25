@@ -1,0 +1,38 @@
+#!/bin/bash
+# Koppelt in den ersten 2 Minuten nach dem Start automatisch Bluetooth-Controller,
+# die sich im Kopplungsmodus befinden. Gekoppelte Controller verbinden sich danach selbst.
+set -u
+DURATION=120
+
+[ -e /run/retro-tv/bt-autopair ] || exit 0
+
+for _ in $(seq 1 20); do
+    [ -n "$(bluetoothctl list 2>/dev/null)" ] && break
+    sleep 1
+done
+[ -n "$(bluetoothctl list 2>/dev/null)" ] || { echo "Kein Bluetooth-Adapter gefunden"; exit 0; }
+
+bluetoothctl power on >/dev/null
+bluetoothctl pairable on >/dev/null
+bluetoothctl --timeout "$DURATION" scan on >/dev/null 2>&1 &
+
+is_gamepad() {
+    grep -Eq 'Icon: input-(gaming|joystick)' <<<"$1" ||
+        grep -Eiq 'Name: .*(controller|gamepad|joy-?con|8bitdo|xbox|dualshock|dualsense|wireless controller|pro controller)' <<<"$1"
+}
+
+end=$((SECONDS + DURATION))
+while [ $SECONDS -lt $end ]; do
+    while read -r _ mac _; do
+        info=$(bluetoothctl info "$mac" 2>/dev/null)
+        grep -q 'Paired: yes' <<<"$info" && continue
+        is_gamepad "$info" || continue
+        echo "Kopple Controller $mac"
+        if bluetoothctl --agent NoInputNoOutput --timeout 20 pair "$mac"; then
+            bluetoothctl trust "$mac"
+            bluetoothctl --timeout 10 connect "$mac"
+        fi
+    done < <(bluetoothctl devices 2>/dev/null)
+    sleep 3
+done
+wait

@@ -1,0 +1,47 @@
+name: Image bauen
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+
+permissions:
+  contents: write
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: KVM für den Test freigeben
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+
+      - name: Image bauen
+        run: docker run --rm --privileged -e GITHUB_RUN_NUMBER -v "$PWD:/work" debian:trixie bash /work/build/build.sh
+
+      - name: Test in QEMU (64-Bit-UEFI)
+        run: docker run --rm --privileged $([ -e /dev/kvm ] && echo --device /dev/kvm) -v "$PWD:/work" debian:trixie bash /work/build/test-qemu.sh x64
+
+      - name: Test in QEMU (32-Bit-UEFI wie beim Atom-Stick)
+        run: docker run --rm --privileged $([ -e /dev/kvm ] && echo --device /dev/kvm) -v "$PWD:/work" debian:trixie bash /work/build/test-qemu.sh ia32
+
+      - name: Testergebnisse hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testergebnisse
+          path: out/test-*
+          if-no-files-found: ignore
+
+      - name: Release veröffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="build-${{ github.run_number }}"
+          gh release create "$tag" out/*.img.xz out/*.img.xz.sha256 \
+            --title "TV Retro Gaming $tag" --notes-file out/release-notes.md

@@ -1,0 +1,13 @@
+[Unit]
+Description=TV Retro Gaming: Ersteinrichtung (Speicher vergrößern, Schlüssel erzeugen)
+After=local-fs.target
+Before=ssh.service retroarch.service
+ConditionPathExists=!/var/lib/retro-tv/firstboot-done
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/retro-firstboot
+
+[Install]
+WantedBy=multi-user.target

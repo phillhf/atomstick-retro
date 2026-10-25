@@ -1,0 +1,12 @@
+#!/bin/bash
+# Läuft nach dem Ende von RetroArch (ExecStopPost, als root).
+# Hat der Benutzer RetroArch über das Menü beendet, wird das Gerät ausgeschaltet.
+# Bei Neustart/Stopp durch systemd (Herunterfahren, Spieleliste aktualisiert) passiert nichts.
+
+[ "${SERVICE_RESULT:-}" = success ] && [ "${EXIT_CODE:-}" = exited ] && [ "${EXIT_STATUS:-}" = 0 ] || exit 0
+[ -e /run/retro-tv/no-poweroff ] && exit 0
+[ "$(systemctl is-system-running 2>/dev/null)" = stopping ] && exit 0
+# Ein Stopp- oder Neustart-Auftrag für den Dienst bedeutet: systemd hat RetroArch beendet
+systemctl list-jobs --no-legend 2>/dev/null | grep -q 'retroarch\.service' && exit 0
+
+systemctl poweroff --no-block

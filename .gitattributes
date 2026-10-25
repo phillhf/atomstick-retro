@@ -1,0 +1,2 @@
+* text=auto eol=lf
+retro-partition/*.txt text eol=crlf

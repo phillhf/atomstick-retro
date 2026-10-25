@@ -1,0 +1,81 @@
+# Pakete für das TV-Retro-Gaming-Image (Debian 13 "trixie", amd64).
+# Eine Zeile pro Paket, Kommentare mit #. Empfehlungen werden nicht installiert.
+
+# Basis
+systemd-sysv
+udev
+dbus
+kmod
+procps
+sudo
+less
+nano
+tzdata
+whiptail
+python3
+rsync
+usbutils
+pciutils
+
+# Kernel und Bootloader (64- und 32-Bit-UEFI)
+linux-image-amd64
+initramfs-tools
+zstd
+grub-common
+grub-efi-amd64-bin
+grub-efi-ia32-bin
+efibootmgr
+intel-microcode
+
+# Firmware (WLAN/Bluetooth/Grafik/Ton der Atom-Sticks und gängiger USB-Adapter)
+firmware-linux-free
+firmware-misc-nonfree
+firmware-realtek
+firmware-intel-graphics
+firmware-intel-misc
+firmware-intel-sound
+firmware-iwlwifi
+firmware-atheros
+firmware-brcm80211
+firmware-libertas
+firmware-mediatek
+bluez-firmware
+
+# Datenträger
+e2fsprogs
+dosfstools
+fdisk
+gdisk
+cloud-guest-utils
+exfatprogs
+
+# Grafik und Ton
+libgl1-mesa-dri
+libegl-mesa0
+libgbm1
+alsa-utils
+
+# RetroArch und Emulatoren
+retroarch
+libretro-core-info
+libretro-nestopia
+libretro-snes9x
+libretro-gambatte
+libretro-genesisplusgx
+
+# Netzwerk und Freigaben
+network-manager
+wpasupplicant
+iw
+wireless-regdb
+rfkill
+samba
+avahi-daemon
+wsdd2
+openssh-server
+
+# Bluetooth
+bluez
+
+# Werkzeuge
+inotify-tools
