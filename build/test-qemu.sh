@@ -89,7 +89,7 @@ check() {
 echo "==> Ergebnis ($ARCH)"
 check 'RETROTV-CI-DONE'                                 "System gestartet, Testbericht erhalten"
 check '^retroarch=active'                               "RetroArch läuft"
-check '^retroarch-restarts=0$'                          "RetroArch ist nicht abgestürzt"
+check '^retroarch-restarts=0[[:space:]]*$'                         "RetroArch ist nicht abgestürzt"
 check '^retro-config=active'                            "Einstellungen angewendet"
 check '^retro-firstboot=active'                         "Ersteinrichtung gelaufen"
 check '^smbd=active'                                    "Netzwerkfreigabe läuft"
