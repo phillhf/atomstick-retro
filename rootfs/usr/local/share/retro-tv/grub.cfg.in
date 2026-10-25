@@ -6,6 +6,9 @@ set default=0
 #INSTALLED set timeout_style=hidden
 set menu_color_normal=light-gray/black
 set menu_color_highlight=black/light-gray
+# Grafiktreiber laden, damit der Kernel das Firmware-Bild übernimmt (nötig bei 32-Bit-UEFI)
+insmod all_video
+set gfxpayload=keep
 terminal_output console
 
 menuentry "TV Retro Gaming" {

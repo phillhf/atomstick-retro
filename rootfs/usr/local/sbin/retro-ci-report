@@ -13,6 +13,10 @@ sleep 45
     for u in retroarch retro-config retro-firstboot retro-boot-import retro-roms-watch NetworkManager smbd nmbd avahi-daemon wsdd2 bluetooth; do
         echo "$u=$(systemctl is-active "$u")"
     done
+    echo "retroarch-restarts=$(systemctl show -p NRestarts --value retroarch)"
+    echo "--- Kernel-Grafik"
+    ls -l /dev/dri/ 2>&1
+    journalctl -k -b --no-pager | grep -iE 'drm|fb0|efifb|simpledrm|bochs' | head -n 20
     echo "--- fehlgeschlagene Dienste"
     systemctl --failed --no-legend --plain
     echo "--- Datenträger"

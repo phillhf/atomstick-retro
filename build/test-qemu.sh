@@ -79,6 +79,7 @@ monitor "screendump $RESULT/bildschirm.png -f png" || true
 sleep 2
 monitor quit || true
 cp "$T/serial.log" "$RESULT/serial.log"
+chmod -R a+rX "$RESULT"
 cat "$RESULT/serial.log"
 
 ok=true
@@ -88,6 +89,7 @@ check() {
 echo "==> Ergebnis ($ARCH)"
 check 'RETROTV-CI-DONE'                                 "System gestartet, Testbericht erhalten"
 check '^retroarch=active'                               "RetroArch läuft"
+check '^retroarch-restarts=0$'                          "RetroArch ist nicht abgestürzt"
 check '^retro-config=active'                            "Einstellungen angewendet"
 check '^retro-firstboot=active'                         "Ersteinrichtung gelaufen"
 check '^smbd=active'                                    "Netzwerkfreigabe läuft"

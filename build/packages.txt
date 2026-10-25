@@ -3,6 +3,7 @@
 
 # Basis
 systemd-sysv
+libpam-systemd
 udev
 dbus
 kmod
