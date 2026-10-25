@@ -39,10 +39,22 @@ sleep 45
         apt-get update -q >/dev/null 2>&1 && apt-get install -y -q gdb >/dev/null 2>&1
         override=()
         [ -f /run/retro-tv/retroarch-override.cfg ] && override=(--appendconfig /run/retro-tv/retroarch-override.cfg)
+        mount -t debugfs none /sys/kernel/debug 2>/dev/null
+        echo "--- DRM-Clients während RetroArch als retro läuft"
+        runuser -u retro -- env HOME=/home/retro timeout 8 /usr/bin/retroarch "${override[@]}" < /dev/tty1 >/dev/null 2>&1 &
+        sleep 1.5
+        cat /sys/kernel/debug/dri/*/clients 2>&1
+        wait
+        echo "exit=$?"
+        echo "--- RetroArch als root (8 s)"
+        HOME=/home/retro timeout 8 /usr/bin/retroarch "${override[@]}" < /dev/tty1 >/dev/null 2>&1
+        echo "exit=$? (124 = lief bis zum Timeout, 139 = Absturz)"
+        echo "--- Backtrace als retro"
         timeout 180 runuser -u retro -- env HOME=/home/retro DEBUGINFOD_URLS=https://debuginfod.debian.net \
             gdb -q -batch -ex 'set debuginfod enabled on' -ex 'set pagination off' \
-                -ex run -ex 'thread apply all bt 25' \
-                --args /usr/bin/retroarch --verbose "${override[@]}" < /dev/tty1 2>&1 | tail -n 200
+                -ex 'break drmModePageFlip' -ex run -ex finish -ex continue -ex finish -ex continue -ex finish \
+                -ex 'thread 1' -ex 'bt 25' \
+                --args /usr/bin/retroarch "${override[@]}" < /dev/tty1 2>&1 | grep -vE '^\[INFO\]|^\s*$' | tail -n 60
     fi
     echo "RETROTV-CI-DONE"
 } > /dev/ttyS0 2>&1
