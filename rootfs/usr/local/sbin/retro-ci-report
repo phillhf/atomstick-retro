@@ -32,5 +32,17 @@ sleep 45
     journalctl -b -u retroarch --no-pager | tail -n 80
     echo "--- Journal Fehler"
     journalctl -b -p err --no-pager | tail -n 60
+
+    if [ "$(systemctl show -p NRestarts --value retroarch)" != 0 ]; then
+        echo "--- Backtrace (RetroArch ist abgestürzt)"
+        systemctl stop retroarch
+        apt-get update -q >/dev/null 2>&1 && apt-get install -y -q gdb >/dev/null 2>&1
+        override=()
+        [ -f /run/retro-tv/retroarch-override.cfg ] && override=(--appendconfig /run/retro-tv/retroarch-override.cfg)
+        timeout 180 runuser -u retro -- env HOME=/home/retro DEBUGINFOD_URLS=https://debuginfod.debian.net \
+            gdb -q -batch -ex 'set debuginfod enabled on' -ex 'set pagination off' \
+                -ex run -ex 'thread apply all bt 25' \
+                --args /usr/bin/retroarch --verbose "${override[@]}" < /dev/tty1 2>&1 | tail -n 200
+    fi
     echo "RETROTV-CI-DONE"
 } > /dev/ttyS0 2>&1

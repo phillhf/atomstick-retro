@@ -27,6 +27,7 @@ for d in nes snes gb gbc megadrive mastersystem gamegear; do
     install -d -o retro -g retro "/home/retro/roms/$d"
 done
 install -o retro -g retro -m 644 /usr/local/share/retro-tv/retroarch.cfg /home/retro/.config/retroarch/retroarch.cfg
+chown -R retro:retro /home/retro
 
 echo "==> [chroot] System"
 cat > /etc/fstab <<EOF
