@@ -57,7 +57,7 @@ qemu-system-x86_64 -machine q35 -m 2048 -smp 2 "${ACCEL[@]}" \
     -drive if=none,id=stick,format=raw,file="$T/disk.img" \
     -device usb-storage,drive=stick,removable=on \
     -device usb-kbd \
-    -vga std -display none \
+    -vga none -device virtio-vga -display none \
     -netdev user,id=n0 -device virtio-net-pci,netdev=n0 \
     -audiodev none,id=snd0 -device intel-hda -device hda-output,audiodev=snd0 \
     -serial file:"$T/serial.log" \
