@@ -1,5 +1,5 @@
 [Unit]
-Description=TV Retro Gaming: ROM-Import von USB-Datenträger %I
+Description=AtomStick Retro: ROM-Import von USB-Datenträger %I
 After=local-fs.target
 
 [Service]

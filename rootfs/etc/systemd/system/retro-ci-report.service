@@ -1,5 +1,5 @@
 [Unit]
-Description=TV Retro Gaming: Testbericht für den automatischen QEMU-Test
+Description=AtomStick Retro: Testbericht für den automatischen QEMU-Test
 After=retroarch.service retro-firstboot.service
 ConditionPathExists=/etc/retro-tv/ci-test
 

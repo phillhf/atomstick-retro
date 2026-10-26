@@ -1,7 +1,8 @@
-TV RETRO GAMING
+ATOMSTICK RETRO
 ===============
 
-Dieses Laufwerk ("RETRO") gehört zu deinem TV-Retro-Gaming-Stick.
+Dieses Laufwerk ("RETRO") gehört zu AtomStick Retro, der Retro-Konsole
+auf deinem Intel-Atom-HDMI-Stick.
 
 1. EINSTELLUNGEN
    Öffne retro-config.txt mit dem Editor und trage dein WLAN ein.

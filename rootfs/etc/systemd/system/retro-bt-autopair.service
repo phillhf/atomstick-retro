@@ -1,5 +1,5 @@
 [Unit]
-Description=TV Retro Gaming: Bluetooth-Controller automatisch koppeln
+Description=AtomStick Retro: Bluetooth-Controller automatisch koppeln
 After=bluetooth.service retro-config.service
 Wants=bluetooth.service
 

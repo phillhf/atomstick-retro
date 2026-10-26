@@ -1,5 +1,5 @@
 [Unit]
-Description=TV Retro Gaming: ROMs von der RETRO-Partition übernehmen
+Description=AtomStick Retro: ROMs von der RETRO-Partition übernehmen
 After=local-fs.target retro-firstboot.service
 Before=retroarch.service
 ConditionPathIsMountPoint=/boot/retro

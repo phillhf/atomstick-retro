@@ -1,4 +1,6 @@
-# TV Retro Gaming
+# AtomStick Retro
+
+**Macht aus einem Intel-Atom-HDMI-Stick eine Retro-Konsole für den Fernseher.**
 
 Ein schlankes, maßgeschneidertes Linux für den **CSL PC on a Stick** (Art. 54988, Intel Atom) und
 ähnliche HDMI-Sticks. Nach dem Einschalten startet direkt eine Spieleoberfläche für:
@@ -19,7 +21,7 @@ gängige Linux-Images nicht starten kann.
 
 ## 1. Image herunterladen
 
-Unter **Releases** in diesem Repository die neueste Datei `tv-retro-gaming-….img.xz` herunterladen.
+Unter **Releases** in diesem Repository die neueste Datei `atomstick-retro-….img.xz` herunterladen.
 Das Image wird bei jeder Änderung automatisch von GitHub Actions gebaut und in QEMU getestet
 (64-Bit- und 32-Bit-UEFI).
 
@@ -44,7 +46,7 @@ Fragt Windows, ob eine Partition formatiert werden soll: **Abbrechen**.
 
 Im Startmenü gibt es drei Einträge:
 
-- **TV Retro Gaming**: normal starten (direkt vom USB-Stick spielen geht auch)
+- **AtomStick Retro**: normal starten (direkt vom USB-Stick spielen geht auch)
 - **Auf internen Speicher installieren**: kopiert alles auf den internen 32-GB-Speicher.
   Dafür wird eine **Tastatur** gebraucht. Danach den USB-Stick abziehen.
 - **Fehlersuche**: Textkonsole statt Spieleoberfläche (Login `retro` / `retro`)

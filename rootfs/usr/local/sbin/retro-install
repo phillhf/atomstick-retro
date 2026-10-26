@@ -3,7 +3,7 @@
 # Wird über den GRUB-Eintrag "Auf internen Speicher installieren" gestartet (retro.install).
 set -uo pipefail
 export TERM=linux
-TITLE="TV Retro Gaming - Installation"
+TITLE="AtomStick Retro - Installation"
 T=/mnt/target
 
 msg()    { whiptail --title "$TITLE" --msgbox "$1" 14 72; }
@@ -26,7 +26,7 @@ done < <(lsblk -dpno NAME,SIZE,MODEL,TYPE | awk '$NF=="disk" {NF--; print}')
 default=${default:-${items[0]}}
 
 target=$(whiptail --title "$TITLE" --default-item "$default" --menu \
-    "Wohin soll TV Retro Gaming installiert werden?\n(Interner Speicher heißt meist /dev/mmcblk...)" \
+    "Wohin soll AtomStick Retro installiert werden?\n(Interner Speicher heißt meist /dev/mmcblk...)" \
     16 72 6 "${items[@]}" 3>&1 1>&2 2>&3) || { msg "Abgebrochen. Das Gerät startet neu."; reboot; exit 0; }
 
 whiptail --title "$TITLE" --defaultno --yesno \
@@ -74,7 +74,7 @@ EOF
 if [ -d /sys/firmware/efi ]; then
     loader='\EFI\BOOT\BOOTX64.EFI'
     [ "$(cat /sys/firmware/efi/fw_platform_size 2>/dev/null)" = 32 ] && loader='\EFI\BOOT\BOOTIA32.EFI'
-    efibootmgr -q -c -d "$target" -p 1 -L "TV Retro Gaming" -l "$loader" 2>/dev/null || true
+    efibootmgr -q -c -d "$target" -p 1 -L "AtomStick Retro" -l "$loader" 2>/dev/null || true
 fi
 
 sync

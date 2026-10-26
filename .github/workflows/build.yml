@@ -44,4 +44,4 @@ jobs:
         run: |
           tag="build-${{ github.run_number }}"
           gh release create "$tag" out/*.img.xz out/*.img.xz.sha256 \
-            --title "TV Retro Gaming $tag" --notes-file out/release-notes.md
+            --title "AtomStick Retro $tag" --notes-file out/release-notes.md

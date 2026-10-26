@@ -1,5 +1,5 @@
 [Unit]
-Description=TV Retro Gaming: Installation auf den internen Speicher
+Description=AtomStick Retro: Installation auf den internen Speicher
 After=local-fs.target systemd-user-sessions.service retro-config.service
 ConditionKernelCommandLine=retro.install
 

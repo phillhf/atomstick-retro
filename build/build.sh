@@ -1,5 +1,5 @@
 #!/bin/bash
-# Baut das TV-Retro-Gaming-Image.
+# Baut das AtomStick-Retro-Image.
 # Läuft als root in einem privilegierten debian:trixie-Container:
 #   docker run --rm --privileged -v "$PWD:/work" debian:trixie bash /work/build/build.sh
 set -euo pipefail
@@ -24,7 +24,7 @@ apt-get install -y -q --no-install-recommends \
 
 rm -rf "$WORK"
 mkdir -p "$WORK" "$OUT"
-rm -f "$OUT"/tv-retro-gaming-*
+rm -f "$OUT"/atomstick-retro-*
 
 ROOT_UUID=$(uuidgen)
 ESP_ID=$(uuidgen | tr -d '-' | cut -c1-8 | tr 'a-f' 'A-F')
@@ -82,7 +82,7 @@ S=2048  # Sektoren pro MiB
 P1=$S
 P2=$(( P1 + ESP_MB * S ))
 P3=$(( P2 + RETRO_MB * S ))
-IMG="$OUT/tv-retro-gaming-$BUILD_ID.img"
+IMG="$OUT/atomstick-retro-$BUILD_ID.img"
 truncate -s $(( (P3 + ROOT_MB * S + S) * 512 )) "$IMG"
 
 sfdisk -q "$IMG" <<EOF
@@ -103,7 +103,7 @@ xz -T0 -6 -k -f "$IMG"
 ( cd "$OUT" && sha256sum "$(basename "$IMG").xz" > "$(basename "$IMG").xz.sha256" )
 
 cat > "$OUT/release-notes.md" <<EOF
-TV Retro Gaming, Build $BUILD_ID (Debian $SUITE, Kernel $(ls "$R/lib/modules"))
+AtomStick Retro, Build $BUILD_ID (Debian $SUITE, Kernel $(ls "$R/lib/modules"))
 
 **Installation:** \`.img.xz\` herunterladen und mit balenaEtcher oder Rufus (DD-Modus) auf einen USB-Stick schreiben. Danach siehe README.
 

@@ -24,7 +24,7 @@ esac
 
 rm -rf "$T" "$RESULT"
 mkdir -p "$T" "$RESULT"
-IMG=$(ls "$OUT"/tv-retro-gaming-*.img | head -n1)
+IMG=$(ls "$OUT"/atomstick-retro-*.img | head -n1)
 cp --sparse=always "$IMG" "$T/disk.img"
 cp "$VARS" "$T/vars.fd"
 

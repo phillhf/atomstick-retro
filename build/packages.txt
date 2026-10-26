@@ -1,4 +1,4 @@
-# Pakete für das TV-Retro-Gaming-Image (Debian 13 "trixie", amd64).
+# Pakete für das AtomStick-Retro-Image (Debian 13 "trixie", amd64).
 # Eine Zeile pro Paket, Kommentare mit #. Empfehlungen werden nicht installiert.
 
 # Basis

@@ -1,5 +1,5 @@
 [Unit]
-Description=TV Retro Gaming: Spieleliste bei neuen ROMs aktualisieren
+Description=AtomStick Retro: Spieleliste bei neuen ROMs aktualisieren
 After=local-fs.target retroarch.service
 
 [Service]

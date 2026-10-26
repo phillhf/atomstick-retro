@@ -1,5 +1,5 @@
 # ==============================================================
-#  TV Retro Gaming - Einstellungen
+#  AtomStick Retro - Einstellungen
 # ==============================================================
 #  Diese Datei kannst du unter Windows mit dem Editor bearbeiten.
 #  Änderungen gelten ab dem nächsten Start des Geräts.
